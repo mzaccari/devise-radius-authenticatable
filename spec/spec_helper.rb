@@ -24,4 +24,5 @@ RSpec.configure do |config|
   config.order = 'random'
 
   config.include Devise::RadiusAuthenticatable::TestHelpers
+  config.include Capybara::DSL
 end

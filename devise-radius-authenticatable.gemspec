@@ -17,17 +17,16 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- spec/*`.split("\n")
   s.require_paths = ["lib"]
 
-  s.add_dependency('devise', '~> 2.0')
+  s.add_dependency('devise', '~> 3')
   s.add_dependency('radiustar', '~> 0.0.8')
 
-  s.add_development_dependency('rake', '~> 0.9')
-  s.add_development_dependency('rails', '~> 3.2')
-  s.add_development_dependency('jquery-rails', '~> 2.0')
+  s.add_development_dependency('rake', '~> 10.2.2')
+  s.add_development_dependency('rails', '~> 4')
   s.add_development_dependency('sqlite3', '~> 1.3')
-  s.add_development_dependency('rspec', '~> 2.10')
-  s.add_development_dependency('rspec-rails', '~> 2.10')
-  s.add_development_dependency('factory_girl', '~> 3.4')
-  s.add_development_dependency('capybara', '~> 1.1')
+  s.add_development_dependency('rspec', '~> 2.14')
+  s.add_development_dependency('rspec-rails', '~> 2.14')
+  s.add_development_dependency('factory_girl', '~> 4.4')
+  s.add_development_dependency('capybara', '~> 2.2.1')
   s.add_development_dependency('launchy')
   s.add_development_dependency('ammeter', '~> 0.2')
 end
