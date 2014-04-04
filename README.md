@@ -10,8 +10,8 @@ Devise Radius Authenticatable is a Radius authentication strategy for [Devise](h
 Dependencies
 ------------
 
-- Rails ~> 3.2
-- Devise ~> 2.0
+- Rails ~> 4.x
+- Devise ~> 3.x
 - radiustar ~> 0.0.8
 
 Installation
@@ -19,7 +19,7 @@ Installation
 
 In the Gemfile for your application:
 
-    gem "devise", "~> 2.0"
+    gem "devise", "~> 3.2"
     gem "devise-radius-authenticatable"
 
 Setup
@@ -61,8 +61,7 @@ Usage
 In order to use the radius_authenticatable strategy, you must modify your user model to use the :radius_authenticatable module.  The radius_authenticatable strategy can be used standalone or along with database_authenticatable and any other strategies you wish to include. If you use radius_authenticatable alongside other authentication strategies, the default order for the strategies is determined by the order they are loaded in.  The last loaded strategy will be the first strategy executed. The order of these strategies can be configured in the devise.rb initializer as follows:
 
     config.warden do |warden_config|
-      warden_config.default_strategies(:token_authenticatable,
-                                       :database_authenticatable,
+      warden_config.default_strategies(:database_authenticatable,
                                        :radius_authenticatable,
                                        {:scope => :admin})
     end
