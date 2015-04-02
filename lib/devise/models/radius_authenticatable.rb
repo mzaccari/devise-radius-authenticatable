@@ -1,4 +1,4 @@
-require 'radiustar'
+require 'radius/auth'
 require 'devise/strategies/radius_authenticatable'
 
 module Devise
@@ -66,28 +66,20 @@ module Devise
         server = self.class.radius_server
         port = self.class.radius_server_port
         secret = self.class.radius_server_secret
-        options = {
-          :reply_timeout => self.class.radius_server_timeout,
-          :retries_number => self.class.radius_server_retries
-        }
-        if self.class.radius_dictionary_path
-          options[:dict] = Radiustar::Dictionary.new(self.class.radius_dictionary_path)
-        end
 
-        req = Radiustar::Request.new("#{server}:#{port}", options)
+        req = Radius::Auth.new "#{server}:#{port}", get_my_ip(server), self.class.radius_server_timeout, self.class.radius_dictionary_path
 
         # The authenticate method will raise a RuntimeError if we time
         # out waiting for a response from the server.
         begin
-          reply = req.authenticate(username, password, secret)
+          reply = req.check_passwd(username, password, secret)
         rescue
           return false if self.class.handle_radius_timeout_as_failure
           raise
         end
 
-        if reply[:code] == 'Access-Accept'
-          reply.extract!(:code)
-          self.radius_attributes = reply
+        if reply
+          self.radius_attributes = req.packet.attributes
           true
         else
           false
@@ -100,6 +92,18 @@ module Devise
       # authentication.
       def after_radius_authentication
         self.save(:validate => false)
+      end
+
+      def get_my_ip(dest_address)
+        orig_reverse_lookup_setting = Socket.do_not_reverse_lookup
+        Socket.do_not_reverse_lookup = true
+
+        UDPSocket.open do |sock|
+          sock.connect dest_address, 1
+          sock.addr.last
+        end
+      ensure
+        Socket.do_not_reverse_lookup = orig_reverse_lookup_setting
       end
 
       module ClassMethods
