@@ -1,4 +1,4 @@
-require 'radius/auth'
+require 'radiustar'
 require 'devise/strategies/radius_authenticatable'
 
 module Devise
@@ -26,6 +26,8 @@ module Devise
     #
     # RadiusAuthenticable adds the following options to devise_for:
     # * +radius_server+: The hostname or IP address of the radius server.
+    # * +radius_servers+: An array of hostnames or IP addresses for radius servers,
+    #    with optional port.
     # * +radius_server_port+: The port the radius server is listening on.
     # * +radius_server_secret+: The shared secret configured on the radius server.
     # * +radius_server_timeout+: The number of seconds to wait for a response from the
@@ -47,11 +49,20 @@ module Devise
     # actions should be taken to make the user valid or active for authentication.  If
     # you override it, be sure to either call super to save the record or to save the
     # record yourself.
+    #
+    # Authorization callbacks are triggered when +after_radius_authentication is
+    # called:
+    # * +before_radius_authorization :method_name
+    # * +around_radius_authorization :method_name
+    # * +after_radius_authorization :method_name
     module RadiusAuthenticatable
       extend ActiveSupport::Concern
 
+      ACCESS_ACCEPT = 'Access-Accept'
+
       included do
         attr_accessor :radius_attributes
+        define_model_callbacks :radius_authorization
       end
 
       # Use the currently configured radius server to attempt to authenticate the
@@ -63,52 +74,59 @@ module Devise
       # * +username+: The username to send to the radius server
       # * +password+: The password to send to the radius server
       def valid_radius_password?(username, password)
-        server = self.class.radius_server
-        port = self.class.radius_server_port
-        secret = self.class.radius_server_secret
+        reply   = nil
+        secret  = self.class.radius_server_secret
+        options = {
+          reply_timeout:  self.class.radius_server_timeout,
+          retries_number: self.class.radius_server_retries
+        }
 
-        req = Radius::Auth.new "#{server}:#{port}", get_my_ip(server), self.class.radius_server_timeout, self.class.radius_dictionary_path
+        if self.class.radius_dictionary_path
+          options[:dict] = Radiustar::Dictionary.new(self.class.radius_dictionary_path)
+        end
 
-        # The authenticate method will raise a RuntimeError if we time
-        # out waiting for a response from the server.
-        begin
-          reply = req.check_passwd(username, password, secret)
-        rescue
+        self.class.radius_servers_with_ports.each do |server, port|
+          req = Radiustar::Request.new("#{server}:#{port}", options)
+
+          # The authenticate method will raise a RuntimeError if we time
+          # out waiting for a response from the server. If the server responds,
+          # break and process the radius response. If not, try the next server.
+          begin
+            reply = req.authenticate(username, password, secret)
+            break
+          rescue
+            next
+          end
+        end
+
+        # Handle the error if no servers respond.
+        unless reply
           return false if self.class.handle_radius_timeout_as_failure
           raise
         end
 
-        if reply
-          self.radius_attributes = req.packet.attributes
+        if reply[:code] == ACCESS_ACCEPT
+          reply.extract!(:code)
+          self.radius_attributes = reply
           true
         else
           false
         end
       end
 
-      # Callback invoked by the RadiusAuthenticatable strategy after authentication
-      # with the radius server has succeeded and devise has indicated the model is valid.
-      # This callback is invoked prior to devise checking if the model is active for
-      # authentication.
+      # Callback invoked by the RadiusAuthenticatable strategy after
+      # authentication with the radius server has succeeded and devise has
+      # indicated the model is valid. This callback is invoked prior to devise
+      # checking if the model is active for authentication.
       def after_radius_authentication
-        self.save(:validate => false)
-      end
-
-      def get_my_ip(dest_address)
-        orig_reverse_lookup_setting = Socket.do_not_reverse_lookup
-        Socket.do_not_reverse_lookup = true
-
-        UDPSocket.open do |sock|
-          sock.connect dest_address, 1
-          sock.addr.last
+        run_callbacks :radius_authorization do
+          self.save(validate: false)
         end
-      ensure
-        Socket.do_not_reverse_lookup = orig_reverse_lookup_setting
       end
 
       module ClassMethods
 
-        Devise::Models.config(self, :radius_server, :radius_server_port,
+        Devise::Models.config(self, :radius_server, :radius_servers, :radius_server_port,
                               :radius_server_secret, :radius_server_timeout,
                               :radius_server_retries, :radius_uid_field,
                               :radius_uid_generator, :radius_dictionary_path,
@@ -142,6 +160,26 @@ module Devise
           value.downcase! if (self.case_insensitive_keys || []).include?(key)
 
           [value, authentication_hash[:password]]
+        end
+
+        # Returns an enumerable that provides each server with it's configured
+        # port. If no port is given with the server config, the default
+        # +radius_server_port is used.
+        def radius_servers_with_ports
+          @radius_servers_with_ports ||= begin
+            retval   = []
+            servers  = self.radius_servers
+            servers += [self.radius_server] if self.radius_server
+
+            servers.each do |server|
+              server, port = server.split(':')
+              port ||= self.radius_server_port
+
+              retval << [server, port]
+            end
+
+            retval
+          end
         end
       end
     end

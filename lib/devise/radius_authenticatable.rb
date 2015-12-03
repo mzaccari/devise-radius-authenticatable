@@ -4,6 +4,11 @@ module Devise
   # The hostname or IP address of the radius server
   mattr_accessor :radius_server
 
+  # A list of radius servers with optional port.
+  # Example: ['127.0.0.1:11812', '10.20.30.40']
+  mattr_accessor :radius_servers
+  @@radius_servers = []
+
   # The port for the radius server
   mattr_accessor :radius_server_port
   @@radius_server_port = 1812
