@@ -2,7 +2,7 @@ Devise Radius Authenticatable
 =============================
 
 [![Gem Version](https://badge.fury.io/rb/devise-radius-authenticatable.png)](http://badge.fury.io/rb/devise-radius-authenticatable)
-[![Build Status](https://travis-ci.org/cbascom/devise-radius-authenticatable.png)](https://travis-ci.org/cbascom/devise-radius-authenticatable)
+[![Build Status](https://travis-ci.org/mzaccari/devise-radius-authenticatable.png)](https://travis-ci.org/mzaccari/devise-radius-authenticatable)
 [![Code Climate](https://codeclimate.com/github/cbascom/devise-radius-authenticatable.png)](https://codeclimate.com/github/cbascom/devise-radius-authenticatable)
 
 Devise Radius Authenticatable is a Radius authentication strategy for [Devise](http://github.com/plataformatec/devise).
@@ -10,7 +10,7 @@ Devise Radius Authenticatable is a Radius authentication strategy for [Devise](h
 Dependencies
 ------------
 
-- Rails ~> 4.x
+- Rails ~> 3.x or 4.x
 - Devise ~> 3.x
 - radiustar ~> 0.0.8
 
