@@ -47,11 +47,18 @@ module Devise
     # actions should be taken to make the user valid or active for authentication.  If
     # you override it, be sure to either call super to save the record or to save the
     # record yourself.
+    #
+    # Authorization callbacks are triggered when +after_radius_authentication is
+    # called:
+    # * +before_radius_authorization :method_name
+    # * +around_radius_authorization :method_name
+    # * +after_radius_authorization :method_name
     module RadiusAuthenticatable
       extend ActiveSupport::Concern
 
       included do
         attr_accessor :radius_attributes
+        define_model_callbacks :radius_authorization
       end
 
       # Use the currently configured radius server to attempt to authenticate the
@@ -100,7 +107,9 @@ module Devise
       # indicated the model is valid. This callback is invoked prior to devise
       # checking if the model is active for authentication.
       def after_radius_authentication
-        self.save(validate: false)
+        run_callbacks :radius_authorization do
+          self.save(validate: false)
+        end
       end
 
       module ClassMethods
