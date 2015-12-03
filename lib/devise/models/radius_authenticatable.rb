@@ -100,19 +100,7 @@ module Devise
       # indicated the model is valid. This callback is invoked prior to devise
       # checking if the model is active for authentication.
       def after_radius_authentication
-        self.save(:validate => false)
-      end
-
-      def get_my_ip(dest_address)
-        orig_reverse_lookup_setting = Socket.do_not_reverse_lookup
-        Socket.do_not_reverse_lookup = true
-
-        UDPSocket.open do |sock|
-          sock.connect dest_address, 1
-          sock.addr.last
-        end
-      ensure
-        Socket.do_not_reverse_lookup = orig_reverse_lookup_setting
+        self.save(validate: false)
       end
 
       module ClassMethods
