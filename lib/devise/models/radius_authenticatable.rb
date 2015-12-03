@@ -58,6 +58,8 @@ module Devise
     module RadiusAuthenticatable
       extend ActiveSupport::Concern
 
+      ACCESS_ACCEPT = 'Access-Accept'
+
       included do
         attr_accessor :radius_attributes
         define_model_callbacks :radius_authorization
@@ -103,7 +105,7 @@ module Devise
           raise
         end
 
-        if reply[:code] == 'Access-Accept'
+        if reply[:code] == ACCESS_ACCEPT
           reply.extract!(:code)
           self.radius_attributes = reply
           true
