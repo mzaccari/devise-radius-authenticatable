@@ -1,4 +1,4 @@
-require 'radius/auth'
+require 'radiustar'
 require 'devise/strategies/radius_authenticatable'
 
 module Devise
@@ -63,33 +63,42 @@ module Devise
       # * +username+: The username to send to the radius server
       # * +password+: The password to send to the radius server
       def valid_radius_password?(username, password)
-        server = self.class.radius_server
-        port = self.class.radius_server_port
-        secret = self.class.radius_server_secret
+        server  = self.class.radius_server
+        port    = self.class.radius_server_port
+        secret  = self.class.radius_server_secret
+        options = {
+          reply_timeout:  self.class.radius_server_timeout,
+          retries_number: self.class.radius_server_retries
+        }
 
-        req = Radius::Auth.new "#{server}:#{port}", get_my_ip(server), self.class.radius_server_timeout, self.class.radius_dictionary_path
+        if self.class.radius_dictionary_path
+          options[:dict] = Radiustar::Dictionary.new(self.class.radius_dictionary_path)
+        end
+
+        req = Radiustar::Request.new("#{server}:#{port}", options)
 
         # The authenticate method will raise a RuntimeError if we time
         # out waiting for a response from the server.
         begin
-          reply = req.check_passwd(username, password, secret)
+          reply = req.authenticate(username, password, secret)
         rescue
           return false if self.class.handle_radius_timeout_as_failure
           raise
         end
 
-        if reply
-          self.radius_attributes = req.packet.attributes
+        if reply[:code] == 'Access-Accept'
+          reply.extract!(:code)
+          self.radius_attributes = reply
           true
         else
           false
         end
       end
 
-      # Callback invoked by the RadiusAuthenticatable strategy after authentication
-      # with the radius server has succeeded and devise has indicated the model is valid.
-      # This callback is invoked prior to devise checking if the model is active for
-      # authentication.
+      # Callback invoked by the RadiusAuthenticatable strategy after
+      # authentication with the radius server has succeeded and devise has
+      # indicated the model is valid. This callback is invoked prior to devise
+      # checking if the model is active for authentication.
       def after_radius_authentication
         self.save(:validate => false)
       end
