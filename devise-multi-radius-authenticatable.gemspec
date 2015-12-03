@@ -6,11 +6,11 @@ Gem::Specification.new do |s|
   s.name        = "devise-multi-radius-authenticatable"
   s.version     = Devise::RadiusAuthenticatable::VERSION.dup
   s.platform    = Gem::Platform::RUBY
-  s.summary     = "Devise extension to allow authentication via one or more Radius servers"
+  s.summary     = "Devise extension to allow authentication via one or more RADIUS servers"
   s.email       = "michael.zaccari@gmail.com"
   s.homepage    = "http://github.com/mzaccari/devise-radius-authenticatable"
   s.description = "A new authentication strategy named radius_authenticatable is added to the list of warden strategies when the model requests it.  The radius server information is configured through the devise initializer. One or more servers may be configured.  When a user attempts to authenticate via radius, the radiustar gem is used to perform the authentication with each server until a response is received.  This authentication strategy can be used in place of the database_authenticatable or alongside it depending on the needs of the application."
-  s.authors     = ['Calvin Bascom']
+  s.authors     = ['Michael Zaccari']
   s.license     = 'MIT'
 
   s.files         = `git ls-files`.split("\n")
