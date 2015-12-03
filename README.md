@@ -53,7 +53,7 @@ Options:
 Documentation
 -------------
 
-The rdocs for the gem are available here: http://rubydoc.info/github/cbascom/devise-radius-authenticatable/master/frames
+The rdocs for the gem are available here: http://rubydoc.info/github/mzaccari/devise-radius-authenticatable/master
 
 Usage
 -----
