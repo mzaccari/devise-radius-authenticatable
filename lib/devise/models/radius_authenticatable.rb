@@ -52,6 +52,7 @@ module Devise
 
       included do
         attr_accessor :radius_attributes
+        define_model_callbacks :radius_authorization
       end
 
       # Use the currently configured radius server to attempt to authenticate the
@@ -100,7 +101,9 @@ module Devise
       # indicated the model is valid. This callback is invoked prior to devise
       # checking if the model is active for authentication.
       def after_radius_authentication
-        self.save(validate: false)
+        run_callbacks :radius_authorization do
+          self.save(validate: false)
+        end
       end
 
       module ClassMethods
