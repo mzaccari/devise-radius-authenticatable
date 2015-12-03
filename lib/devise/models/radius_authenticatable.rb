@@ -26,6 +26,8 @@ module Devise
     #
     # RadiusAuthenticable adds the following options to devise_for:
     # * +radius_server+: The hostname or IP address of the radius server.
+    # * +radius_servers+: An array of hostnames or IP addresses for radius servers,
+    #    with optional port.
     # * +radius_server_port+: The port the radius server is listening on.
     # * +radius_server_secret+: The shared secret configured on the radius server.
     # * +radius_server_timeout+: The number of seconds to wait for a response from the
@@ -70,8 +72,7 @@ module Devise
       # * +username+: The username to send to the radius server
       # * +password+: The password to send to the radius server
       def valid_radius_password?(username, password)
-        server  = self.class.radius_server
-        port    = self.class.radius_server_port
+        reply   = nil
         secret  = self.class.radius_server_secret
         options = {
           reply_timeout:  self.class.radius_server_timeout,
@@ -82,13 +83,22 @@ module Devise
           options[:dict] = Radiustar::Dictionary.new(self.class.radius_dictionary_path)
         end
 
-        req = Radiustar::Request.new("#{server}:#{port}", options)
+        self.class.radius_servers_with_ports.each do |server, port|
+          req = Radiustar::Request.new("#{server}:#{port}", options)
 
-        # The authenticate method will raise a RuntimeError if we time
-        # out waiting for a response from the server.
-        begin
-          reply = req.authenticate(username, password, secret)
-        rescue
+          # The authenticate method will raise a RuntimeError if we time
+          # out waiting for a response from the server. If the server responds,
+          # break and process the radius response. If not, try the next server.
+          begin
+            reply = req.authenticate(username, password, secret)
+            break
+          rescue
+            next
+          end
+        end
+
+        # Handle the error if no servers respond.
+        unless reply
           return false if self.class.handle_radius_timeout_as_failure
           raise
         end
@@ -114,7 +124,7 @@ module Devise
 
       module ClassMethods
 
-        Devise::Models.config(self, :radius_server, :radius_server_port,
+        Devise::Models.config(self, :radius_server, :radius_servers, :radius_server_port,
                               :radius_server_secret, :radius_server_timeout,
                               :radius_server_retries, :radius_uid_field,
                               :radius_uid_generator, :radius_dictionary_path,
@@ -148,6 +158,26 @@ module Devise
           value.downcase! if (self.case_insensitive_keys || []).include?(key)
 
           [value, authentication_hash[:password]]
+        end
+
+        # Returns an enumerable that provides each server with it's configured
+        # port. If no port is given with the server config, the default
+        # +radius_server_port is used.
+        def radius_servers_with_ports
+          @radius_servers_with_ports ||= begin
+            retval   = []
+            servers  = self.radius_servers
+            servers += [self.radius_server] if self.radius_server
+
+            servers.each do |server|
+              server, port = server.split(':')
+              port ||= self.radius_server_port
+
+              retval << [server, port]
+            end
+
+            retval
+          end
         end
       end
     end
