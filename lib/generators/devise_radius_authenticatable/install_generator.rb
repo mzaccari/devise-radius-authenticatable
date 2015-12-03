@@ -44,8 +44,12 @@ module DeviseRadiusAuthenticatable
         # order by explicitly telling warden the order in which to apply the strategies.
         # See the Warden Configuration section for further details.
         #
-        # Configure the hostname or IP address of the radius server to use.
-        config.radius_server = '#{server}'
+        # Configure the hostname or IP address of an individual radius server to use.
+        # config.radius_server = '#{server}'
+
+        # Configure multiple radius servers with optional port.
+        # Example: ['127.0.0.1']
+        config.radius_servers = ['#{server}:#{options[:port]}']
 
         # Configure the port to use when connecting to the radius server.
         config.radius_server_port = #{options[:port]}
