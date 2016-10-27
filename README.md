@@ -11,15 +11,21 @@ Dependencies
 ------------
 
 - Rails ~> 3.x or 4.x
-- Devise ~> 3.x
+- Devise ~> 3.x or 4.x
 - radiustar ~> 0.0.8
+
+### Which version to use for which version of devise?
+
+*devise-multi-radius-authenticatable*  | *devise*
+--------------------------------------:|---------
+`~> 0.1.2`                             | `< 3.5.2`
+`~> 0.2.0`                             | `>= 4.0.0`, `< 4.3.0`
 
 Installation
 ------------
 
 In the Gemfile for your application:
 
-    gem "devise", "~> 3.2"
     gem "devise-multi-radius-authenticatable"
 
 Setup
