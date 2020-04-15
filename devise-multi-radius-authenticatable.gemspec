@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- spec/*`.split("\n")
   s.require_paths = ["lib"]
 
-  s.add_dependency('devise', '>= 4.0.0', '< 4.3.0')
+  s.add_dependency('devise', '~> 4.7', '>= 4.7.1')
 
   s.add_dependency('radiustar', '~> 0.0.8')
 
